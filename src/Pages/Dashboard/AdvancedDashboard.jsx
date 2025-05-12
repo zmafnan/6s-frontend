@@ -17,6 +17,7 @@ import {
   Center,
   Loader,
   Tabs,
+  Progress,
 } from "@mantine/core"
 import {
   IconChartBar,
@@ -26,6 +27,7 @@ import {
   IconTrendingUp,
   IconTrendingDown,
   IconFilter,
+  IconTarget,
 } from "@tabler/icons-react"
 import { notifications } from "@mantine/notifications"
 import {
@@ -39,6 +41,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  Label,
 } from "recharts"
 import api from "../../services/api"
 
@@ -59,6 +62,9 @@ const COLORS = [
   "#c0392b",
 ]
 
+// Target score value
+const TARGET_SCORE = 3.0
+
 // Helper function to get score color
 const getScoreColor = (score) => {
   const numScore = Number.parseFloat(score)
@@ -68,12 +74,34 @@ const getScoreColor = (score) => {
   return "red"
 }
 
+// Helper function to calculate percentage to target
+const calculatePercentageToTarget = (score) => {
+  if (!score || score === "N/A") return 0
+  const numScore = Number.parseFloat(score)
+  return Math.min(Math.round((numScore / TARGET_SCORE) * 100), 100)
+}
+
+// Custom label for data points
+const CustomizedLabel = (props) => {
+  const { x, y, value } = props
+  if (!value) return null
+
+  const formattedValue = Number.parseFloat(value).toFixed(1)
+
+  return (
+    <text x={x} y={y - 10} fill="#333" fontSize={11} fontWeight="bold" textAnchor="middle">
+      {formattedValue}
+    </text>
+  )
+}
+
 // Replace the YearlyTrendTooltip component with this simpler version
 const YearlyTrendTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const score = payload[0].value ? Number.parseFloat(payload[0].value).toFixed(2) : "N/A"
     const scoreColor = score !== "N/A" ? getScoreColor(score) : "gray"
     const departmentCount = payload[0].payload.department_count || 0
+    const percentToTarget = calculatePercentageToTarget(score)
 
     return (
       <Paper shadow="md" p="md" withBorder style={{ backgroundColor: "rgba(255, 255, 255, 0.9)" }}>
@@ -82,6 +110,12 @@ const YearlyTrendTooltip = ({ active, payload, label }) => {
           <Text size="sm">Average Score:</Text>
           <Text fw={700} style={{ color: scoreColor }}>
             {score}
+          </Text>
+        </Group>
+        <Group spacing="xs" mt="xs">
+          <Text size="sm">% to Target:</Text>
+          <Text fw={700} style={{ color: percentToTarget >= 100 ? "green" : "orange" }}>
+            {percentToTarget}%
           </Text>
         </Group>
         <Text size="xs" color="dimmed" mt="xs">
@@ -97,6 +131,8 @@ const YearlyTrendTooltip = ({ active, payload, label }) => {
 const RankingTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
+    const percentToTarget = calculatePercentageToTarget(data.final_score)
+
     return (
       <Paper shadow="md" p="md" withBorder style={{ backgroundColor: "rgba(255, 255, 255, 0.9)" }}>
         <Text fw={700}>
@@ -105,6 +141,10 @@ const RankingTooltip = ({ active, payload, label }) => {
         <Group spacing="xs">
           <Text size="sm">Score:</Text>
           <Badge color={getScoreColor(data.final_score)}>{data.final_score}</Badge>
+        </Group>
+        <Group spacing="xs" mt="xs">
+          <Text size="sm">% to Target:</Text>
+          <Badge color={percentToTarget >= 100 ? "green" : "orange"}>{percentToTarget}%</Badge>
         </Group>
         <Divider my="xs" />
         <Stack spacing="xs">
@@ -254,7 +294,7 @@ export default function AdvancedDashboard() {
     fetchPreviousMonthData()
   }, [monthlyRankingFilters])
 
-  // Replace the calculateYearlyAverage function with this simpler version
+  // Calculate the yearly average score
   const calculateYearlyAverage = () => {
     if (!yearlyTrendData.data || yearlyTrendData.data.length === 0) return "N/A"
 
@@ -269,6 +309,14 @@ export default function AdvancedDashboard() {
     })
 
     return count > 0 ? (totalScore / count).toFixed(2) : "N/A"
+  }
+
+  // Get current score from the trend data
+  const getCurrentScore = () => {
+    if (!yearlyTrendData.data || yearlyTrendData.data.length === 0) return "N/A"
+
+    const validScores = yearlyTrendData.data.filter((item) => item.score !== null)
+    return validScores.length > 0 ? validScores[validScores.length - 1].score : "N/A"
   }
 
   return (
@@ -363,28 +411,44 @@ export default function AdvancedDashboard() {
                     <Grid.Col span={4}>
                       <Stack spacing={0}>
                         <Text size="sm" color="dimmed">
-                          Current Score
-                        </Text>
-                        {(() => {
-                          const validScores = yearlyTrendData.data.filter((item) => item.score !== null)
-                          const currentScore =
-                            validScores.length > 0 ? validScores[validScores.length - 1].score : "N/A"
-                          return (
-                            <Badge size="xl" color={getScoreColor(currentScore)} mt={4}>
-                              {currentScore}
-                            </Badge>
-                          )
-                        })()}
-                      </Stack>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                      <Stack spacing={0}>
-                        <Text size="sm" color="dimmed">
                           Average Score
                         </Text>
                         <Badge size="xl" color={getScoreColor(calculateYearlyAverage())} mt={4}>
                           {calculateYearlyAverage()}
                         </Badge>
+                      </Stack>
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <Stack spacing={0}>
+                        <Text size="sm" color="dimmed">
+                          % to Target
+                        </Text>
+                        {(() => {
+                          const averageScore = calculateYearlyAverage()
+                          const percentToTarget = calculatePercentageToTarget(averageScore)
+
+                          return (
+                            <Stack spacing={5} mt={4}>
+                              <Group position="apart">
+                                <Badge size="lg" color={percentToTarget >= 100 ? "green" : "orange"}>
+                                  {percentToTarget}%
+                                </Badge>
+                                <Group spacing={4}>
+                                  <IconTarget size={16} color="#e74c3c" />
+                                  <Text size="sm" fw={500} color="#e74c3c">
+                                    {TARGET_SCORE}
+                                  </Text>
+                                </Group>
+                              </Group>
+                              <Progress
+                                value={percentToTarget}
+                                color={percentToTarget >= 100 ? "green" : "orange"}
+                                size="sm"
+                                radius="xl"
+                              />
+                            </Stack>
+                          )
+                        })()}
                       </Stack>
                     </Grid.Col>
                     <Grid.Col span={4}>
@@ -439,15 +503,22 @@ export default function AdvancedDashboard() {
                         height={70}
                       />
                       <YAxis
-                        domain={[0, 4]}
-                        ticks={[0, 1, 2, 3, 4]}
+                        domain={[2, 4]}
+                        ticks={[2, 2.5, 3, 3.5, 4]}
                         label={{ value: "Score", angle: -90, position: "insideLeft", fill: "#333" }}
                         tick={{ fill: "#333", fontSize: 12 }}
                       />
                       <Tooltip content={<YearlyTrendTooltip />} />
+
+                      {/* Reference lines for score thresholds */}
                       <ReferenceLine y={3.5} stroke="#2ecc71" strokeDasharray="3 3" />
                       <ReferenceLine y={2.5} stroke="#3498db" strokeDasharray="3 3" />
-                      <ReferenceLine y={1.5} stroke="#f39c12" strokeDasharray="3 3" />
+
+                      {/* Target line at score 3 */}
+                      <ReferenceLine y={3} stroke="#e74c3c" strokeWidth={2}>
+                        <Label value="Target (3.0)" position="right" fill="#e74c3c" fontSize={12} fontWeight="bold" />
+                      </ReferenceLine>
+
                       <Line
                         type="monotone"
                         dataKey="score"
@@ -457,20 +528,30 @@ export default function AdvancedDashboard() {
                         strokeWidth={3}
                         connectNulls={true}
                         dot={{ strokeWidth: 2, r: 6, fill: "white" }}
+                        label={<CustomizedLabel />}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
 
                 <Group position="apart" mt={0}>
+                  <Group spacing="xs">
+                    <ThemeIcon size="xs" radius="xl" color="red">
+                      <IconTarget size={10} />
+                    </ThemeIcon>
+                    <Text size="sm" color="dimmed">
+                      Target: 3.0
+                    </Text>
+                  </Group>
                   <Text size="sm" color="dimmed">
-                    Score: <Badge color="red">{"<1.5"}</Badge> <Badge color="yellow">1.5-2.5</Badge>{" "}
-                    <Badge color="blue">2.5-3.5</Badge> <Badge color="green">{">3.5"}</Badge>
-                  </Text>
-                  <Text size="sm" color="dimmed">
-                    {yearlyTrendFilters.departmentType === "production" ? "Production" : "Non-Production"} Departments
+                    Score: <Badge color="yellow">2-2.5</Badge> <Badge color="blue">2.5-3.5</Badge>{" "}
+                    <Badge color="green">{">3.5"}</Badge>
                   </Text>
                 </Group>
+
+                <Text size="sm" color="dimmed" align="right" mt={5}>
+                  {yearlyTrendFilters.departmentType === "production" ? "Production" : "Non-Production"} Departments
+                </Text>
               </>
             ) : (
               <Center style={{ height: 400 }}>
@@ -573,22 +654,7 @@ export default function AdvancedDashboard() {
               <>
                 <Paper p="md" withBorder radius="md" mb="md">
                   <Grid>
-                    <Grid.Col span={6}>
-                      <Stack spacing={0}>
-                        <Text size="sm" color="dimmed">
-                          Top Department
-                        </Text>
-                        <Group mt={4}>
-                          <Text fw={700} size="sm">
-                            {monthlyRankingData[0]?.department_name || "N/A"}
-                          </Text>
-                          <Badge size="md" color={getScoreColor(monthlyRankingData[0]?.final_score || 0)}>
-                            {monthlyRankingData[0]?.final_score || "N/A"}
-                          </Badge>
-                        </Group>
-                      </Stack>
-                    </Grid.Col>
-                    <Grid.Col span={6}>
+                    <Grid.Col span={4}>
                       <Stack spacing={0}>
                         <Text size="sm" color="dimmed">
                           Average Score
@@ -615,6 +681,66 @@ export default function AdvancedDashboard() {
                         })()}
                       </Stack>
                     </Grid.Col>
+                    <Grid.Col span={4}>
+                      <Stack spacing={0}>
+                        <Text size="sm" color="dimmed">
+                          % to Target
+                        </Text>
+                        {(() => {
+                          if (!monthlyRankingData || monthlyRankingData.length === 0) {
+                            return (
+                              <Badge size="xl" color="gray" mt={4}>
+                                N/A
+                              </Badge>
+                            )
+                          }
+
+                          const avgScore = (
+                            monthlyRankingData.reduce((sum, dept) => sum + Number(dept.final_score), 0) /
+                            monthlyRankingData.length
+                          ).toFixed(2)
+
+                          const percentToTarget = calculatePercentageToTarget(avgScore)
+
+                          return (
+                            <Stack spacing={5} mt={4}>
+                              <Group position="apart">
+                                <Badge size="lg" color={percentToTarget >= 100 ? "green" : "orange"}>
+                                  {percentToTarget}%
+                                </Badge>
+                                <Group spacing={4}>
+                                  <IconTarget size={16} color="#e74c3c" />
+                                  <Text size="sm" fw={500} color="#e74c3c">
+                                    {TARGET_SCORE}
+                                  </Text>
+                                </Group>
+                              </Group>
+                              <Progress
+                                value={percentToTarget}
+                                color={percentToTarget >= 100 ? "green" : "orange"}
+                                size="sm"
+                                radius="xl"
+                              />
+                            </Stack>
+                          )
+                        })()}
+                      </Stack>
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <Stack spacing={0}>
+                        <Text size="sm" color="dimmed">
+                          Top Department
+                        </Text>
+                        <Group mt={4}>
+                          <Text fw={700} size="sm">
+                            {monthlyRankingData[0]?.department_name || "N/A"}
+                          </Text>
+                          <Badge size="md" color={getScoreColor(monthlyRankingData[0]?.final_score || 0)}>
+                            {monthlyRankingData[0]?.final_score || "N/A"}
+                          </Badge>
+                        </Group>
+                      </Stack>
+                    </Grid.Col>
                   </Grid>
                 </Paper>
 
@@ -630,14 +756,19 @@ export default function AdvancedDashboard() {
                         tick={{ fill: "#333", fontSize: 12 }}
                       />
                       <YAxis
-                        domain={[0, 4]}
-                        ticks={[0, 1, 2, 3, 4]}
+                        domain={[2, 4]}
+                        ticks={[2, 2.5, 3, 3.5, 4]}
                         label={{ value: "Score", angle: -90, position: "insideLeft", fill: "#333" }}
                       />
                       <Tooltip content={<RankingTooltip />} />
                       <ReferenceLine y={3.5} stroke="#2ecc71" strokeDasharray="3 3" />
                       <ReferenceLine y={2.5} stroke="#3498db" strokeDasharray="3 3" />
-                      <ReferenceLine y={1.5} stroke="#f39c12" strokeDasharray="3 3" />
+
+                      {/* Target line at score 3 */}
+                      <ReferenceLine y={3} stroke="#e74c3c" strokeWidth={2}>
+                        <Label value="Target (3.0)" position="right" fill="#e74c3c" fontSize={12} fontWeight="bold" />
+                      </ReferenceLine>
+
                       <Bar
                         dataKey="final_score"
                         name="Score"
@@ -651,14 +782,23 @@ export default function AdvancedDashboard() {
                 </div>
 
                 <Group position="apart" mt={0}>
+                  <Group spacing="xs">
+                    <ThemeIcon size="xs" radius="xl" color="red">
+                      <IconTarget size={10} />
+                    </ThemeIcon>
+                    <Text size="sm" color="dimmed">
+                      Target: 3.0
+                    </Text>
+                  </Group>
                   <Text size="sm" color="dimmed">
-                    Score: <Badge color="red">{"<1.5"}</Badge> <Badge color="yellow">1.5-2.5</Badge>{" "}
-                    <Badge color="blue">2.5-3.5</Badge> <Badge color="green">{">3.5"}</Badge>
-                  </Text>
-                  <Text size="sm" color="dimmed">
-                    Showing {monthlyRankingData.length} departments
+                    Score: <Badge color="yellow">2-2.5</Badge> <Badge color="blue">2.5-3.5</Badge>{" "}
+                    <Badge color="green">{">3.5"}</Badge>
                   </Text>
                 </Group>
+
+                <Text size="sm" color="dimmed" align="right" mt={5}>
+                  Showing {monthlyRankingData.length} departments
+                </Text>
               </>
             ) : (
               <Center style={{ height: 400 }}>
