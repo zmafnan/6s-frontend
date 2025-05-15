@@ -81,6 +81,9 @@ export default function NonProductionAuditCreate() {
     type: null,
   })
 
+  // Add this new state variable after the other state declarations
+  const [previousAuditPhotos, setPreviousAuditPhotos] = useState([])
+
   // Fetch schedules saat komponen mount
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -107,6 +110,8 @@ export default function NonProductionAuditCreate() {
     fetchSchedules()
   }, [])
 
+  // Modify the handleScheduleChange function to extract photo URLs
+  // Find this function and update it to include the following code after setting previousAudit
   const handleScheduleChange = async (scheduleId) => {
     const selectedSchedule = schedules.find((s) => s.value === scheduleId)?.schedule
     if (selectedSchedule) {
@@ -114,6 +119,7 @@ export default function NonProductionAuditCreate() {
 
       // Clear previous audit data first
       setPreviousAudit(null)
+      setPreviousAuditPhotos([]) // Clear previous photos
 
       // Set form data with empty previous findings
       setFormData({
@@ -148,6 +154,17 @@ export default function NonProductionAuditCreate() {
             ...prev,
             previous_findings: previousAudit.current_findings || "",
           }))
+
+          // Extract photo URLs from previous audit
+          if (previousAudit.photo_url) {
+            try {
+              const photoUrls = JSON.parse(previousAudit.photo_url)
+              console.log("Previous audit photos:", photoUrls)
+              setPreviousAuditPhotos(photoUrls)
+            } catch (error) {
+              console.error("Error parsing photo URLs:", error)
+            }
+          }
         } else {
           console.log("No previous audit found")
         }
@@ -159,6 +176,21 @@ export default function NonProductionAuditCreate() {
           color: "red",
         })
       }
+    }
+  }
+
+  // Add this helper function after handleScheduleChange
+  const getPhotoUrl = (photoUrl) => {
+    // Get base URL without /api suffix if present
+    const baseUrl = api.defaults.baseURL?.endsWith("/api")
+      ? api.defaults.baseURL.slice(0, -4)
+      : api.defaults.baseURL || ""
+
+    // Handle different URL formats
+    if (photoUrl.startsWith("http")) {
+      return photoUrl
+    } else {
+      return `${baseUrl}${photoUrl}`
     }
   }
 
@@ -550,7 +582,7 @@ export default function NonProductionAuditCreate() {
                           </Group>
                           <Group>
                             <Text fw={500} size="sm" w={120}>
-                              Audit Schedule:
+                              Audit Date:
                             </Text>
                             <Text>{new Date(selectedSchedule.audit_date).toLocaleDateString()}</Text>
                           </Group>
@@ -593,6 +625,25 @@ export default function NonProductionAuditCreate() {
                           size={isMobile ? "md" : "sm"}
                         />
                       </Paper>
+                      {previousAuditPhotos.length > 0 && (
+                        <Paper p="md" withBorder radius="md" bg="gray.0">
+                          <Title order={5} mb="xs">
+                            Foto Temuan Sebelumnya
+                          </Title>
+                          <SimpleGrid cols={isMobile ? 2 : 3} spacing="sm">
+                            {previousAuditPhotos.map((photoUrl, index) => (
+                              <div key={index}>
+                                <Image
+                                  src={getPhotoUrl(photoUrl) || "/placeholder.svg"}
+                                  alt={`Previous finding ${index + 1}`}
+                                  radius="md"
+                                  style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
+                                />
+                              </div>
+                            ))}
+                          </SimpleGrid>
+                        </Paper>
+                      )}
                     </>
                   )}
                 </Stack>

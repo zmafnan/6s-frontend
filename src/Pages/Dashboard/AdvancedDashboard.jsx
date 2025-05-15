@@ -65,6 +65,12 @@ const COLORS = [
 // Target score value
 const TARGET_SCORE = 3.0
 
+// Helper function to format scores with exactly 2 decimal places
+const formatScore = (score) => {
+  if (!score || score === "N/A") return "N/A"
+  return Number.parseFloat(score).toFixed(2)
+}
+
 // Helper function to get score color
 const getScoreColor = (score) => {
   const numScore = Number.parseFloat(score)
@@ -78,15 +84,15 @@ const getScoreColor = (score) => {
 const calculatePercentageToTarget = (score) => {
   if (!score || score === "N/A") return 0
   const numScore = Number.parseFloat(score)
-  return Math.min(Math.round((numScore / TARGET_SCORE) * 100), 100)
+  return Math.round((numScore / TARGET_SCORE) * 100)
 }
 
-// Custom label for data points
+// Custom label for data points - Updated to show 2 decimal places
 const CustomizedLabel = (props) => {
   const { x, y, value } = props
   if (!value) return null
 
-  const formattedValue = Number.parseFloat(value).toFixed(1)
+  const formattedValue = Number.parseFloat(value).toFixed(2) // Changed to 2 decimal places
 
   return (
     <text x={x} y={y - 10} fill="#333" fontSize={11} fontWeight="bold" textAnchor="middle">
@@ -98,7 +104,7 @@ const CustomizedLabel = (props) => {
 // Replace the YearlyTrendTooltip component with this simpler version
 const YearlyTrendTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    const score = payload[0].value ? Number.parseFloat(payload[0].value).toFixed(2) : "N/A"
+    const score = payload[0].value ? formatScore(payload[0].value) : "N/A" // Using formatScore
     const scoreColor = score !== "N/A" ? getScoreColor(score) : "gray"
     const departmentCount = payload[0].payload.department_count || 0
     const percentToTarget = calculatePercentageToTarget(score)
@@ -131,6 +137,7 @@ const YearlyTrendTooltip = ({ active, payload, label }) => {
 const RankingTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
+    const formattedScore = formatScore(data.final_score) // Using formatScore
     const percentToTarget = calculatePercentageToTarget(data.final_score)
 
     return (
@@ -140,7 +147,7 @@ const RankingTooltip = ({ active, payload, label }) => {
         </Text>
         <Group spacing="xs">
           <Text size="sm">Score:</Text>
-          <Badge color={getScoreColor(data.final_score)}>{data.final_score}</Badge>
+          <Badge color={getScoreColor(data.final_score)}>{formattedScore}</Badge>
         </Group>
         <Group spacing="xs" mt="xs">
           <Text size="sm">% to Target:</Text>
@@ -151,37 +158,37 @@ const RankingTooltip = ({ active, payload, label }) => {
           <Group spacing="xs">
             <Text size="xs">Sort:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.sort)}>
-              {data.scores.sort}
+              {formatScore(data.scores.sort)}
             </Badge>
           </Group>
           <Group spacing="xs">
             <Text size="xs">Set in Order:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.set_in_order)}>
-              {data.scores.set_in_order}
+              {formatScore(data.scores.set_in_order)}
             </Badge>
           </Group>
           <Group spacing="xs">
             <Text size="xs">Shine:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.shine)}>
-              {data.scores.shine}
+              {formatScore(data.scores.shine)}
             </Badge>
           </Group>
           <Group spacing="xs">
             <Text size="xs">Standardize:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.standardize)}>
-              {data.scores.standardize}
+              {formatScore(data.scores.standardize)}
             </Badge>
           </Group>
           <Group spacing="xs">
             <Text size="xs">Sustain:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.sustain)}>
-              {data.scores.sustain}
+              {formatScore(data.scores.sustain)}
             </Badge>
           </Group>
           <Group spacing="xs">
             <Text size="xs">Safety:</Text>
             <Badge size="sm" color={getScoreColor(data.scores.safety)}>
-              {data.scores.safety}
+              {formatScore(data.scores.safety)}
             </Badge>
           </Group>
         </Stack>
@@ -294,7 +301,7 @@ export default function AdvancedDashboard() {
     fetchPreviousMonthData()
   }, [monthlyRankingFilters])
 
-  // Calculate the yearly average score
+  // Calculate the yearly average score - Updated to use formatScore
   const calculateYearlyAverage = () => {
     if (!yearlyTrendData.data || yearlyTrendData.data.length === 0) return "N/A"
 
@@ -308,15 +315,15 @@ export default function AdvancedDashboard() {
       }
     })
 
-    return count > 0 ? (totalScore / count).toFixed(2) : "N/A"
+    return count > 0 ? formatScore(totalScore / count) : "N/A"
   }
 
-  // Get current score from the trend data
+  // Get current score from the trend data - Updated to use formatScore
   const getCurrentScore = () => {
     if (!yearlyTrendData.data || yearlyTrendData.data.length === 0) return "N/A"
 
     const validScores = yearlyTrendData.data.filter((item) => item.score !== null)
-    return validScores.length > 0 ? validScores[validScores.length - 1].score : "N/A"
+    return validScores.length > 0 ? formatScore(validScores[validScores.length - 1].score) : "N/A"
   }
 
   return (
@@ -436,7 +443,7 @@ export default function AdvancedDashboard() {
                                 <Group spacing={4}>
                                   <IconTarget size={16} color="#e74c3c" />
                                   <Text size="sm" fw={500} color="#e74c3c">
-                                    {TARGET_SCORE}
+                                    {formatScore(TARGET_SCORE)}
                                   </Text>
                                 </Group>
                               </Group>
@@ -516,7 +523,13 @@ export default function AdvancedDashboard() {
 
                       {/* Target line at score 3 */}
                       <ReferenceLine y={3} stroke="#e74c3c" strokeWidth={2}>
-                        <Label value="Target (3.0)" position="right" fill="#e74c3c" fontSize={12} fontWeight="bold" />
+                        <Label
+                          value={`Target (${formatScore(TARGET_SCORE)})`}
+                          position="right"
+                          fill="#e74c3c"
+                          fontSize={12}
+                          fontWeight="bold"
+                        />
                       </ReferenceLine>
 
                       <Line
@@ -540,7 +553,7 @@ export default function AdvancedDashboard() {
                       <IconTarget size={10} />
                     </ThemeIcon>
                     <Text size="sm" color="dimmed">
-                      Target: 3.0
+                      Target: {formatScore(TARGET_SCORE)}
                     </Text>
                   </Group>
                   <Text size="sm" color="dimmed">
@@ -668,14 +681,13 @@ export default function AdvancedDashboard() {
                             )
                           }
 
-                          const avgScore = (
+                          const avgScore =
                             monthlyRankingData.reduce((sum, dept) => sum + Number(dept.final_score), 0) /
                             monthlyRankingData.length
-                          ).toFixed(2)
 
                           return (
                             <Badge size="xl" color={getScoreColor(avgScore)} mt={4}>
-                              {avgScore}
+                              {formatScore(avgScore)}
                             </Badge>
                           )
                         })()}
@@ -695,10 +707,9 @@ export default function AdvancedDashboard() {
                             )
                           }
 
-                          const avgScore = (
+                          const avgScore =
                             monthlyRankingData.reduce((sum, dept) => sum + Number(dept.final_score), 0) /
                             monthlyRankingData.length
-                          ).toFixed(2)
 
                           const percentToTarget = calculatePercentageToTarget(avgScore)
 
@@ -711,7 +722,7 @@ export default function AdvancedDashboard() {
                                 <Group spacing={4}>
                                   <IconTarget size={16} color="#e74c3c" />
                                   <Text size="sm" fw={500} color="#e74c3c">
-                                    {TARGET_SCORE}
+                                    {formatScore(TARGET_SCORE)}
                                   </Text>
                                 </Group>
                               </Group>
@@ -736,7 +747,7 @@ export default function AdvancedDashboard() {
                             {monthlyRankingData[0]?.department_name || "N/A"}
                           </Text>
                           <Badge size="md" color={getScoreColor(monthlyRankingData[0]?.final_score || 0)}>
-                            {monthlyRankingData[0]?.final_score || "N/A"}
+                            {monthlyRankingData[0] ? formatScore(monthlyRankingData[0].final_score) : "N/A"}
                           </Badge>
                         </Group>
                       </Stack>
@@ -766,7 +777,13 @@ export default function AdvancedDashboard() {
 
                       {/* Target line at score 3 */}
                       <ReferenceLine y={3} stroke="#e74c3c" strokeWidth={2}>
-                        <Label value="Target (3.0)" position="right" fill="#e74c3c" fontSize={12} fontWeight="bold" />
+                        <Label
+                          value={`Target (${formatScore(TARGET_SCORE)})`}
+                          position="right"
+                          fill="#e74c3c"
+                          fontSize={12}
+                          fontWeight="bold"
+                        />
                       </ReferenceLine>
 
                       <Bar
@@ -775,7 +792,12 @@ export default function AdvancedDashboard() {
                         fill="#3498db"
                         radius={[4, 4, 0, 0]}
                         barSize={30}
-                        label={{ position: "top", fill: "#333", fontSize: 12 }}
+                        label={{
+                          position: "top",
+                          fill: "#333",
+                          fontSize: 12,
+                          formatter: (value) => formatScore(value), // Format bar labels
+                        }}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -787,7 +809,7 @@ export default function AdvancedDashboard() {
                       <IconTarget size={10} />
                     </ThemeIcon>
                     <Text size="sm" color="dimmed">
-                      Target: 3.0
+                      Target: {formatScore(TARGET_SCORE)}
                     </Text>
                   </Group>
                   <Text size="sm" color="dimmed">

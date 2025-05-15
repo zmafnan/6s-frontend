@@ -107,6 +107,8 @@ export default function ProductionAuditCreate() {
     fetchSchedules()
   }, [])
 
+  const [previousAuditPhotos, setPreviousAuditPhotos] = useState([])
+
   const handleScheduleChange = async (scheduleId) => {
     const selectedSchedule = schedules.find((s) => s.value === scheduleId)?.schedule
     if (selectedSchedule) {
@@ -114,6 +116,7 @@ export default function ProductionAuditCreate() {
 
       // Clear previous audit data first
       setPreviousAudit(null)
+      setPreviousAuditPhotos([])
 
       // Set form data with empty previous findings
       setFormData({
@@ -144,6 +147,16 @@ export default function ProductionAuditCreate() {
             ...prev,
             previous_findings: previousAudit.current_findings || "",
           }))
+
+          // Extract and set previous audit photos
+          if (previousAudit.photo_url) {
+            try {
+              const photoUrls = JSON.parse(previousAudit.photo_url)
+              setPreviousAuditPhotos(photoUrls)
+            } catch (error) {
+              console.error("Error parsing previous audit photos:", error)
+            }
+          }
         } else {
         }
       } catch (error) {
@@ -546,7 +559,7 @@ export default function ProductionAuditCreate() {
                           </Group>
                           <Group>
                             <Text fw={500} size="sm" w={120}>
-                              Audit Schedule:
+                              Audit Date:
                             </Text>
                             <Text>{new Date(selectedSchedule.audit_date).toLocaleDateString()}</Text>
                           </Group>
@@ -589,6 +602,30 @@ export default function ProductionAuditCreate() {
                           size={isMobile ? "md" : "sm"}
                         />
                       </Paper>
+
+                      {previousAuditPhotos.length > 0 && (
+                        <Paper p="md" withBorder radius="md" bg="gray.0">
+                          <Title order={5} mb="xs">
+                            Foto Temuan Sebelumnya
+                          </Title>
+                          <SimpleGrid cols={isMobile ? 2 : 3} spacing="sm">
+                            {previousAuditPhotos.map((photoUrl, index) => (
+                              <div key={index} style={{ position: "relative" }}>
+                                <Image
+                                  src={
+                                    photoUrl.startsWith("http")
+                                      ? photoUrl
+                                      : `${api.defaults.baseURL.replace("/api", "")}${photoUrl}` || "/placeholder.svg"
+                                  }
+                                  alt={`Previous finding ${index + 1}`}
+                                  radius="md"
+                                  style={{ width: "100%", height: "auto", maxHeight: "200px", objectFit: "cover" }}
+                                />
+                              </div>
+                            ))}
+                          </SimpleGrid>
+                        </Paper>
+                      )}
                     </>
                   )}
                 </Stack>

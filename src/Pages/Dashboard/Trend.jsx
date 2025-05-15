@@ -23,7 +23,17 @@ import {
 } from "@mantine/core"
 import { DatePickerInput } from "@mantine/dates"
 import { notifications } from "@mantine/notifications"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  Label,
+} from "recharts"
 import {
   IconChartLine,
   IconCalendarStats,
@@ -33,6 +43,7 @@ import {
   IconMinus,
   IconBuildingFactory2,
   IconBuildingSkyscraper,
+  IconTarget,
 } from "@tabler/icons-react"
 import dayjs from "dayjs"
 
@@ -52,26 +63,16 @@ const COLORS = [
   "#c0392b",
 ]
 
-// Nama bulan dalam Bahasa Indonesia
-const MONTH_NAMES = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-]
+// Helper function to format scores with exactly two decimal places
+const formatScore = (score) => {
+  if (!score || score === "N/A") return "N/A"
+  return Number.parseFloat(score).toFixed(2)
+}
 
 // Custom tooltip for charts
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    const score = Number.parseFloat(payload[0].value).toFixed(2)
+    const score = formatScore(payload[0].value)
     const scoreColor = score >= 3.5 ? "#2ecc71" : score >= 2.5 ? "#3498db" : score >= 1.5 ? "#f39c12" : "#e74c3c"
 
     return (
@@ -88,6 +89,22 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
   return null
 }
+
+// Array of month names
+const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+]
 
 export default function DepartmentScoreTrend() {
   const theme = useMantineTheme()
@@ -213,7 +230,8 @@ export default function DepartmentScoreTrend() {
 
         // Calculate average score for the entire period
         const totalScore = monthlyData.reduce((sum, item) => sum + item.score, 0)
-        const averageScore = monthlyData.length > 0 ? totalScore / monthlyData.length : 0
+        const averageScore = formatScore(monthlyData.length > 0 ? totalScore / monthlyData.length : 0)
+        const currentScore = monthlyData.length > 0 ? formatScore(monthlyData[monthlyData.length - 1].score) : "N/A"
 
         // Add to department charts data
         departmentData.push({
@@ -223,8 +241,8 @@ export default function DepartmentScoreTrend() {
           chartData: monthlyData,
           trendIndicator,
           trendPercentage: trendPercentage.toFixed(1),
-          averageScore: averageScore.toFixed(2),
-          currentScore: monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].score.toFixed(2) : "N/A",
+          averageScore: averageScore,
+          currentScore: currentScore,
         })
       })
 
@@ -285,6 +303,13 @@ export default function DepartmentScoreTrend() {
     if (numScore >= 2.5) return "blue"
     if (numScore >= 1.5) return "yellow"
     return "red"
+  }
+
+  // Add a helper function to calculate percentage to target after the getScoreColor function
+  const calculatePercentageToTarget = (score) => {
+    if (!score || score === "N/A") return 0
+    const numScore = Number.parseFloat(score)
+    return Math.round((numScore / 3.0) * 100)
   }
 
   // Helper function to get trend icon
@@ -461,6 +486,25 @@ export default function DepartmentScoreTrend() {
 
                       <Stack align="center" spacing={5}>
                         <Text size="xs" color="dimmed" transform="uppercase">
+                          % Terhadap Target
+                        </Text>
+                        <Group spacing={5} position="center">
+                          <ThemeIcon size="sm" radius="xl" color="red">
+                            <IconTarget size={12} />
+                          </ThemeIcon>
+                          <Badge
+                            size="xl"
+                            color={calculatePercentageToTarget(dept.averageScore) >= 100 ? "green" : "orange"}
+                            p="md"
+                            style={{ fontSize: 18 }}
+                          >
+                            {calculatePercentageToTarget(dept.averageScore)}%
+                          </Badge>
+                        </Group>
+                      </Stack>
+
+                      <Stack align="center" spacing={5}>
+                        <Text size="xs" color="dimmed" transform="uppercase">
                           Trend
                         </Text>
                         <Group spacing={5}>
@@ -485,7 +529,7 @@ export default function DepartmentScoreTrend() {
                         ]}
                         label={
                           <Text fw={700} ta="center" size="lg">
-                            {dept.averageScore}
+                            {formatScore(dept.averageScore)}
                           </Text>
                         }
                       />
@@ -504,8 +548,8 @@ export default function DepartmentScoreTrend() {
                           tick={{ fill: "#333", fontSize: 12 }}
                         />
                         <YAxis
-                          domain={[0, 4]}
-                          ticks={[0, 1, 2, 3, 4]}
+                          domain={[2, 4]}
+                          ticks={[2, 2.5, 3, 3.5, 4]}
                           label={{ value: "Skor", angle: -90, position: "insideLeft", fill: "#333" }}
                           tick={{ fill: "#333", fontSize: 12 }}
                         />
@@ -513,6 +557,15 @@ export default function DepartmentScoreTrend() {
                         <ReferenceLine y={3.5} stroke="#2ecc71" strokeDasharray="3 3" />
                         <ReferenceLine y={2.5} stroke="#3498db" strokeDasharray="3 3" />
                         <ReferenceLine y={1.5} stroke="#f39c12" strokeDasharray="3 3" />
+                        <ReferenceLine y={3} stroke="#e74c3c" strokeWidth={2}>
+                          <Label
+                            value="Target (3.00)"
+                            position="right"
+                            fill="#e74c3c"
+                            fontSize={12}
+                            fontWeight="bold"
+                          />
+                        </ReferenceLine>
                         <Line
                           type="monotone"
                           dataKey="score"
@@ -521,6 +574,11 @@ export default function DepartmentScoreTrend() {
                           strokeWidth={3}
                           connectNulls={true}
                           dot={{ stroke: dept.color, strokeWidth: 2, r: 6, fill: "white" }}
+                          label={({ x, y, value }) => (
+                            <text x={x} y={y - 10} fill="#333" fontSize={11} fontWeight="bold" textAnchor="middle">
+                              {formatScore(value)}
+                            </text>
+                          )}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -528,8 +586,14 @@ export default function DepartmentScoreTrend() {
 
                   <Group position="apart" mt="md">
                     <Text size="sm" color="dimmed">
-                      Skor: <Badge color="red">{"<1.5"}</Badge> <Badge color="yellow">1.5-2.5</Badge>{" "}
-                      <Badge color="blue">2.5-3.5</Badge> <Badge color="green">{">3.5"}</Badge>
+                      <Group spacing="xs">
+                        <ThemeIcon size="xs" radius="xl" color="red">
+                          <IconTarget size={10} />
+                        </ThemeIcon>
+                        <Text>Target: 3.00</Text>
+                        Skor: <Badge color="red">{"<1.5"}</Badge> <Badge color="yellow">1.5-2.5</Badge>{" "}
+                        <Badge color="blue">2.5-3.5</Badge> <Badge color="green">{">3.5"}</Badge>
+                      </Group>
                     </Text>
                     <Text size="sm" color="dimmed">
                       Data terakhir:{" "}
