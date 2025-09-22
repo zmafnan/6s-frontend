@@ -13,12 +13,12 @@ export default defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "https://192.168.16.5:5003",
+        target: "https://192.168.56.7:5003",
         changeOrigin: true,
         secure: false,
       },
       "/uploads": {
-        target: "https://192.168.16.5:5003",
+        target: "https://192.168.56.7:5003",
         changeOrigin: true,
         secure: false,
       },
@@ -33,12 +33,12 @@ export default defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "https://192.168.16.5:5003",
+        target: "https://192.168.56.7:5003",
         changeOrigin: true,
         secure: false,
       },
       "/uploads": {
-        target: "https://192.168.16.5:5003",
+        target: "https://192.168.56.7:5003",
         changeOrigin: true,
         secure: false,
       },
