@@ -627,7 +627,7 @@ export default function Schedule() {
           <Select
             label="Lean Facilitator Name"
             placeholder="Select facilitator"
-            data={["Alam", "Ega", "Jubed", "Musa", "Sari", "Sendi", "Rishal", "Zikri"]}
+            data={["Zikri", "Reza", "Miki"]}
             {...form.getInputProps("lean_facilitator_name")}
             mb="md"
             searchable
