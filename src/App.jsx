@@ -17,6 +17,7 @@ import SchduleMobile from "./Pages/Schedule/Schedule-mobile"
 
 import ProductionAudit from "./Pages/ProductionAudit/ProductionAudit"
 import ProductionAuditCreate from "./Pages/ProductionAudit/Create"
+import ProductionAuditCreateWarehouse from "./Pages/ProductionAudit/CreateWarehouse"
 import ProductionAuditEdit from "./Pages/ProductionAudit/Edit"
 import ProductionAuditPreview from "./Pages/ProductionAudit/Preview"
 
@@ -40,6 +41,7 @@ function App() {
           {/* Routes WITHOUT AppLayout (no navbar) */}
           <Route path="/6S/non-production-audit/create" element={<NonProductionAuditCreate />} />
           <Route path="/6S/production-audit/create" element={<ProductionAuditCreate />} />
+          <Route path="/6S/production-audit/createwarehouse" element={<ProductionAuditCreateWarehouse />} />
           <Route path="/6S/schedule/mobile" element={<SchduleMobile />} />
 
           {/* Routes WITH AppLayout (navbar) */}

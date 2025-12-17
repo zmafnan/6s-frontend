@@ -51,68 +51,6 @@ import Webcam from "react-webcam"
 import SignatureCanvas from "react-signature-canvas"
 import { useMediaQuery } from "@mantine/hooks"
 
-//sort
-import sort11 from "./StandardFoto/sort/sort-1-1.jpg"
-import sort12 from "./StandardFoto/sort/sort-1-2.jpg"
-import sort21 from "./StandardFoto/sort/sort-2-1.jpg"
-import sort22 from "./StandardFoto/sort/sort-2-2.jpg"
-import sort31 from "./StandardFoto/sort/sort-3-1.jpg"
-import sort32 from "./StandardFoto/sort/sort-3-2.jpg"
-import sort41 from "./StandardFoto/sort/sort-4-1.jpg"
-import sort42 from "./StandardFoto/sort/sort-4-2.jpg"
-
-
-//setinorder
-import set11 from "./StandardFoto/setinorder/setinorder-1-1.jpg"
-import set12 from "./StandardFoto/setinorder/setinorder-1-2.jpg"
-import set21 from "./StandardFoto/setinorder/setinorder-2-1.jpg"
-import set22 from "./StandardFoto/setinorder/setinorder-2-2.jpg"
-import set31 from "./StandardFoto/setinorder/setinorder-3-1.jpg"
-import set32 from "./StandardFoto/setinorder/setinorder-3-2.jpg"
-import set41 from "./StandardFoto/setinorder/setinorder-4-1.jpg"
-import set42 from "./StandardFoto/setinorder/setinorder-4-2.jpg"
-
-//shine
-import shine11 from "./StandardFoto/shine/shine-1-1.jpg"
-import shine12 from "./StandardFoto/shine/shine-1-2.jpg"
-import shine21 from "./StandardFoto/shine/shine-2-1.jpg"
-import shine22 from "./StandardFoto/shine/shine-2-2.jpg"
-import shine31 from "./StandardFoto/shine/shine-3-1.jpg"
-import shine32 from "./StandardFoto/shine/shine-3-2.jpg"
-import shine41 from "./StandardFoto/shine/shine-4-1.jpg"
-import shine42 from "./StandardFoto/shine/shine-4-2.jpg"
-
-//standardize
-import std11 from "./StandardFoto/standardized/standardized-1-1.jpg"
-import std12 from "./StandardFoto/standardized/standardized-1-2.jpg"
-import std21 from "./StandardFoto/standardized/standardized-2-1.jpg"
-import std22 from "./StandardFoto/standardized/standardized-2-2.jpg"
-import std31 from "./StandardFoto/standardized/standardized-3-1.jpg"
-import std32 from "./StandardFoto/standardized/standardized-3-2.jpg"
-import std41 from "./StandardFoto/standardized/standardized-4-1.jpg"
-import std42 from "./StandardFoto/standardized/standardized-4-2.jpg"
-
-//sustain
-import sus11 from "./StandardFoto/sustain/sustain-1-1.jpg"
-import sus12 from "./StandardFoto/sustain/sustain-1-2.jpg"
-import sus21 from "./StandardFoto/sustain/sustain-2-1.jpg"
-import sus22 from "./StandardFoto/sustain/sustain-2-2.jpg"
-import sus31 from "./StandardFoto/sustain/sustain-3-1.jpg"
-import sus32 from "./StandardFoto/sustain/sustain-3-2.jpg"
-import sus41 from "./StandardFoto/sustain/sustain-4-1.jpg"
-import sus42 from "./StandardFoto/sustain/sustain-4-2.jpg"
-
-//safety
-import safe11 from "./StandardFoto/safety/safety-1-1.jpg"
-import safe12 from "./StandardFoto/safety/safety-1-2.jpg"
-import safe21 from "./StandardFoto/safety/safety-2-1.jpg"
-import safe22 from "./StandardFoto/safety/safety-2-2.jpg"
-import safe31 from "./StandardFoto/safety/safety-3-1.jpg"
-import safe32 from "./StandardFoto/safety/safety-3-2.jpg"
-import safe41 from "./StandardFoto/safety/safety-4-1.jpg"
-import safe42 from "./StandardFoto/safety/safety-4-2.jpg"
-
-
 export default function ProductionAuditCreate() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -150,11 +88,20 @@ export default function ProductionAuditCreate() {
         const response = await api.get("/schedules")
         // Filter hanya schedule yang belum completed dan untuk departemen production
         const pendingSchedules = response.data
-          .filter((schedule) => schedule.status === "pending" && schedule.Department?.type === "production")
+          .filter(
+            (schedule) =>
+              schedule.status === "pending" &&
+              schedule.Department?.type === "production" &&
+              ["WAREHOUSE", "FINISH GOOD"].includes(
+                schedule.Department?.name?.toUpperCase()
+              )
+          )
           .map((schedule) => ({
             value: schedule.id.toString(),
-            label: `${schedule.Department.name} - ${new Date(schedule.audit_date).toLocaleDateString()}`,
-            schedule: schedule,
+            label: `${schedule.Department.name} - ${new Date(
+              schedule.audit_date
+            ).toLocaleDateString()}`,
+            schedule,
           }))
         setSchedules(pendingSchedules)
       } catch (error) {
@@ -231,47 +178,6 @@ export default function ProductionAuditCreate() {
       }
     }
   }
-
-  // === STANDARD FOTO 6S (READ ONLY) ===
-  const STANDARD_PHOTOS = {
-    sort: [
-      [sort11, sort12],
-      [sort21, sort22],
-      [sort31, sort32],
-      [sort41, sort42],
-    ],
-    setInOrder: [
-      [set11, set12],
-      [set21, set22],
-      [set31, set32],
-      [set41, set42],
-    ],
-    shine: [
-      [shine11, shine12],
-      [shine21, shine22],
-      [shine31, shine32],
-      [shine41, shine42],
-    ],
-    standardize: [
-      [std11, std12],
-      [std21, std22],
-      [std31, std32],
-      [std41, std42],
-    ],
-    sustain: [
-      [sus11, sus12],
-      [sus21, sus22],
-      [sus31, sus32],
-      [sus41, sus42],
-    ],
-    safety: [
-      [safe11, safe12],
-      [safe21, safe22],
-      [safe31, safe32],
-      [safe41, safe42],
-    ],
-  }
-
 
   // Tambahkan state untuk preview foto
   const [photosPreviews, setPhotosPreviews] = useState([])
@@ -575,44 +481,11 @@ export default function ProductionAuditCreate() {
               {description}
             </Text>
             {criteria.map((criterion, index) => (
-              <Paper key={index} p="md" withBorder radius="md" shadow="xs">
-                <Stack gap="md">
-                  <Group justify="space-between" wrap="nowrap">
-                    <Text size="sm" fw={600} style={{ flex: 1 }}>
-                      {criterion}
-                    </Text>
-                    <Badge color="gray" variant="light" size="sm">
-                      Item {index + 1}
-                    </Badge>
-                  </Group>
-
-                  <Paper withBorder p="sm" radius="md" bg="gray.0">
-                    <Text size="xs" fw={500} mb="xs" c="dimmed">
-                      📸 Foto Standar
-                    </Text>
-                    <SimpleGrid cols={2} spacing="md">
-                      {STANDARD_PHOTOS[category]?.[index]?.map((photo, photoIndex) => (
-                        <Box key={photoIndex}>
-                          <Image
-                            src={photo || "/placeholder.svg"}
-                            radius="md"
-                            height={180}
-                            fit="contain"
-                            fallbackSrc="/placeholder.svg"
-                            style={{
-                              border: "2px solid #e9ecef",
-                              backgroundColor: "#fff",
-                            }}
-                          />
-                          <Text size="xs" c="dimmed" ta="center" mt="xs">
-                            Standar {photoIndex + 1}
-                          </Text>
-                        </Box>
-                      ))}
-                    </SimpleGrid>
-                  </Paper>
-                  {/* </CHANGE> */}
-
+              <Paper key={index} p="md" withBorder radius="md">
+                <Stack gap="xs">
+                  <Text size="sm" fw={500}>
+                    {criterion}
+                  </Text>
                   <NumberInput
                     min={1}
                     max={4}
@@ -623,13 +496,17 @@ export default function ProductionAuditCreate() {
                     onChange={(value) => handleScoreChange(category, index, value)}
                     size="md"
                     radius="md"
-                    label="Skor Penilaian"
-                    description="Masukkan skor 1-4 berdasarkan standar di atas"
+                    styles={{
+                      input: {
+                        fontSize: isMobile ? rem(18) : rem(16),
+                        height: isMobile ? rem(48) : rem(42),
+                      },
+                    }}
                   />
                 </Stack>
               </Paper>
             ))}
-            <Group justify="flex-end" mt="md">
+            <Group justify="flex-end">
               <Badge size="xl" color={scoreColor} radius="md" p="md">
                 Average: {calculateAverage(scores[category])}
               </Badge>
@@ -653,7 +530,7 @@ export default function ProductionAuditCreate() {
       <form onSubmit={handleSubmit}>
         <Card shadow="sm" padding={isMobile ? "xs" : "lg"} radius="md" withBorder>
           <Title order={2} ta="center" mb="md" style={{ fontSize: isMobile ? rem(20) : rem(24) }}>
-            CHECKLIST AUDIT 6S PRODUCTIONS
+            CHECKLIST AUDIT 6S Gudang/Warehouse
           </Title>
           <Text c="dimmed" mb="xl" ta="center">
             Audit Goal: Untuk Meng-Audit inisiatif dalam menyesuaikan dengan standar 6S, mengidentifikasi area dimana 6S
@@ -774,6 +651,7 @@ export default function ProductionAuditCreate() {
                   </Paper>
 
                   <Accordion variant="separated" radius="md">
+
                     {ScoreSection({
                       title: "1. SORT",
                       description: "Pisahkan dan hilangkan segala sesuatu yang tidak diperlukan di area kerja",
@@ -781,8 +659,8 @@ export default function ProductionAuditCreate() {
                       icon: <IconSortAscending size={20} />,
                       criteria: [
                         "1. Tidak ada barang-barang pribadi dilorong dan disudut-sudut area kerja",
-                        "2. Semua barang pribadi yang tidak ada hubungannya dengan pekerjaan harus disimpan pada tempatnya.",
-                        "3. Semua mesin yang tidak diperlukan harus ada visual yang jelas",
+                        "2. Semua barang pribadi yang tidak ada hubungannya dengan pekerjaan harus disimpan pada tempatnya",
+                        "3. Terdapat Mapping yang menunjukan tata letak barang",
                         "4. Semua peralatan kerja yang sudah tidak digunakan disimpan pada tempatnya",
                       ],
                     })}
@@ -793,10 +671,10 @@ export default function ProductionAuditCreate() {
                       category: "setInOrder",
                       icon: <IconLayoutGrid size={20} />,
                       criteria: [
-                        "1. Tempat Khusus untuk material dan perlengkapan kerja harus jelas",
-                        "2. Material dan perlengkapan kerja diletakkan pada tempatnya",
-                        "3. Penempatan material dan perlengkapan kerja disusun secara rapih",
-                        "4. Penempatan material dan perlengkapan kerja berada dalam area kerja (dalam garis line)",
+                        "1. Tempat khusus untuk pallet dan perlengkapan kerja harus jelas (Visual)",
+                        "2. Pallet dan perlengkapan kerja diletakkan pada tempatnya",
+                        "3. Penempatan pallet dan perlengkapan kerja disusun secara rapih",
+                        "4. Penempatan carton dan perlengkapan kerja berada dalam area kerja (dalam garis line)",
                       ],
                     })}
 
@@ -807,37 +685,37 @@ export default function ProductionAuditCreate() {
                       icon: <IconSparkles size={20} />,
                       criteria: [
                         "1. Material bersih dari debu, sisa material/scrap dan oli",
-                        "2. Lantal, dinding, mesin dan perlengkapan kerja bebas debu, oli, sampah dan sarang laba-laba",
-                        "3. Tersedianya alat kebersihan disetiap area kerja dalam kondisi baik dan berfungsi.",
-                        "4. Kondisi garis, Label, Petunjuk, Visual display dll. Bersih dan tidak rusak",
+                        "2. Lantai, dinding, mesin dan perlengkapan kerja bebas debu, oli, sampah dan sarang laba-laba",
+                        "3. Tersedianya alat kebersihan disetiap area kerja dalam kondisi baik dan berfungsi",
+                        "4. Kondisi garis, label, petunjuk, visual display dll bersih dan tidak rusak",
                       ],
                     })}
 
                     {ScoreSection({
-                      title: "4. STANDARDIZE",
+                      title: "4. STANDARDIZED",
                       description:
-                        "Tempatkan material diarea yang sudah ditetapkan dengan jumlah sesuai batas minimal dan maximal",
+                        "Tempatkan material diarea yang sudah ditetapkan dengan jumlah sesuai batas minimal dan maksimal",
                       category: "standardize",
                       icon: <IconListCheck size={20} />,
                       criteria: [
-                        "1. Semua standar kerja atau proses diketahui dan terlihat jelas. (Kelengkapan SOP)",
+                        "1. Semua standar kerja atau proses diketahui dan terlihat jelas (SOP, Humidity, checklist suhu, checklist kapur)",
                         "2. Pastikan semua sistem dijalankan dan terupdate",
                         "3. Semua perlengkapan kerja yang digunakan sesuai dengan standar yang ditentukan",
-                        "4. Tempatkan material di area yang telah ditetapkan dengan jumlah sesual batas minimal dan maksimal",
+                        "4. Tempatkan carton di area yang telah ditetapkan dengan jumlah sesuai batas minimal dan maksimal",
                       ],
                     })}
 
                     {ScoreSection({
                       title: "5. SUSTAIN",
                       description:
-                        "Terus melakukan dan berupaya meningkatkan ke 4S sebelumnya. Disiplin, bermotivasi untuk terus melakukan kebiasaan kebiasaan baik",
+                        "Terus melakukan dan berupaya meningkatkan ke 4S sebelumnya, disiplin dan bermotivasi",
                       category: "sustain",
                       icon: <IconHeartHandshake size={20} />,
                       criteria: [
                         "1. Dilaksanakan briefing harian/mingguan tentang 6S",
                         "2. Karyawan mengetahui dan memahami definisi 6S",
-                        "3. Improvement Temuan Sebelumnya",
-                        "4. Pastikan semua area kerja dalam keadaan rapi dan bersih",
+                        "3. Improvement temuan sebelumnya",
+                        "4. Pastikan area proses kerja dalam keadaan rapi dan bersih",
                       ],
                     })}
 
@@ -848,12 +726,13 @@ export default function ProductionAuditCreate() {
                       category: "safety",
                       icon: <IconShieldCheck size={20} />,
                       criteria: [
-                        "1. Karyawan yang posisi kerjanya di area berbahaya harus selalu menggunakan APD sesuai dengan ketentuan yang berlaku (diarea bising, area pengeleman, area press dll).",
-                        "2. Setiap penyimpanan bahan kimia harus menggunakan secondary containment.",
-                        "3. Setiap menggunakan bahan kimia berbahaya maka harus disertai MSDS",
-                        "4. Setiap mesin harus memiliki tombol emergency dan pengaman mesin; sellap gunting harus diikat",
+                        "1. Jalur evakuasi tidak terhalang oleh apapun",
+                        "2. Benda di area kerja diletakkan dalam posisi aman dan tidak berpotensi menimpa seseorang",
+                        "3. Kabel-kabel tertata rapi",
+                        "4. Kabel dalam kondisi baik (tidak terkelupas, dll)",
                       ],
                     })}
+
                   </Accordion>
 
                   <Paper p="xl" withBorder radius="md" bg="blue.0" mt="md">
